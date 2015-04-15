@@ -31,7 +31,6 @@ var errClosed = errors.New("client closed")
 
 // Event represents a Riemann event.
 type Event struct {
-	// Required
 	Host    string  // sending host
 	Service string  // the service the event pertains to
 	IsFloat bool    // value type
