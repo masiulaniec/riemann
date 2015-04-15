@@ -115,8 +115,8 @@ func (c *Client) conn1() error {
 func (c *Client) writeLoop(w io.Writer) error {
 	frame := new(frame)
 	frame.Reset()
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
+	timer := time.NewTimer(1 * time.Second)
+	defer timer.Stop()
 	for {
 		select {
 		case event, ok := <-c.pool:
@@ -129,14 +129,16 @@ func (c *Client) writeLoop(w io.Writer) error {
 					return err
 				}
 				frame.Reset()
+				timer.Reset()
 			}
-		case <-ticker.C:
+		case <-timer.C:
 			if frame.Len > 0 {
 				if _, err := w.Write(frame.Bytes()); err != nil {
 					return err
 				}
 				frame.Reset()
 			}
+			timer.Reset()
 		}
 	}
 }
