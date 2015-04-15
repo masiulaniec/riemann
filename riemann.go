@@ -181,6 +181,9 @@ func (e *Event) validate() error {
 	if e.Service == "" {
 		return errors.New("undefined service")
 	}
+	if e.IsFloat && e.Int != 0 {
+		return errors.New("float event with non-float value")
+	}
 	return nil
 }
 
