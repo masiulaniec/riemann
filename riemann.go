@@ -31,17 +31,20 @@ var errClosed = errors.New("client closed")
 
 // Event represents a Riemann event.
 type Event struct {
-	TTL         float32
-	Time        int64
-	Tags        []string
-	Host        string
-	State       string
-	Service     string
-	IsFloat     bool
-	Float       float64
-	Int         int64
-	Description string
-	Attributes  []string
+	// Required
+	Host    string  // sending host
+	Service string  // the service the event pertains to
+	IsFloat bool    // value type
+	Float   float64 // value if IsFloat
+	Int     int64   // value if !IsFloat
+
+	// Optional
+	Description string   // arbitrary text
+	Time        int64    // creation time (unix epoch)
+	TTL         float32  // time to live (seconds)
+	State       string   // associated health state
+	Tags        []string // list of string labels
+	Attributes  []string // list of key, value pairs
 }
 
 // ClientConfig can be used to override Client settings.
