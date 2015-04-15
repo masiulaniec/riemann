@@ -27,7 +27,7 @@ const (
 )
 
 // errClosed is used internally to signal connection close.
-var errClosed = errors.New("client closed")
+var errClosed = errors.New("cclient closed")
 
 // Event represents a Riemann event.
 type Event struct {
@@ -108,18 +108,18 @@ func (c *Client) conn1() error {
 	}
 	defer conn.Close()
 	go c.readLoop(conn)
-	return c.writeLoop(conn, c.pool)
+	return c.writeLoop(conn)
 }
 
 // writeLoop sends requests to the server.
-func (c *Client) writeLoop(w io.Writer, r chan *Event) error {
+func (c *Client) writeLoop(w io.Writer) error {
 	frame := new(frame)
 	frame.Reset()
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for {
 		select {
-		case event, ok := <-r:
+		case event, ok := <-c.pool:
 			if !ok {
 				return errClosed
 			}
