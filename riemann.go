@@ -20,8 +20,13 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// Client flushes every 100 events or every 1 second, whichever occurs first
 const (
-	frameMaxEvents  = 100    // how frequently to write?
+	frameMaxEvents = 100
+	frameMaxDelay  = 1 * time.Second
+)
+
+const (
 	poolDefaultSize = 1      // how many parallel conns?
 	poolMaxQueue    = 100000 // sender-side safety buffer
 )
@@ -115,7 +120,7 @@ func (c *Client) conn1() error {
 func (c *Client) writeLoop(w io.Writer) error {
 	frame := new(frame)
 	frame.Reset()
-	timer := time.NewTimer(1 * time.Second)
+	timer := time.NewTimer(frameMaxDelay)
 	defer timer.Stop()
 	for {
 		select {
@@ -129,7 +134,7 @@ func (c *Client) writeLoop(w io.Writer) error {
 					return err
 				}
 				frame.Reset()
-				timer.Reset()
+				timer.Reset(frameMaxDelay)
 			}
 		case <-timer.C:
 			if frame.Len > 0 {
@@ -138,7 +143,7 @@ func (c *Client) writeLoop(w io.Writer) error {
 				}
 				frame.Reset()
 			}
-			timer.Reset()
+			timer.Reset(frameMaxDelay)
 		}
 	}
 }
