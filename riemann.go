@@ -51,6 +51,27 @@ type Event struct {
 	Attributes  []string // list of key, value pairs
 }
 
+func (e *Event) validate() error {
+	if e.Host == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			return err
+		}
+		e.Host = hostname
+	}
+	if e.Time == 0 {
+		now := time.Now().Unix()
+		e.Time = now
+	}
+	if e.Service == "" {
+		return errors.New("undefined service")
+	}
+	if e.IsFloat && e.Int != 0 {
+		return errors.New("float event with non-float value")
+	}
+	return nil
+}
+
 // ClientConfig can be used to override Client settings.
 type ClientConfig struct {
 	// PoolSize defines how many TCP connections to create.
@@ -88,6 +109,20 @@ func NewClient(addr string, config *ClientConfig) *Client {
 func (c *Client) Close() error {
 	close(c.pool)
 	return nil
+}
+
+// Send tries to delivier the given event. Delivery is not guaranteed.
+// Send will panic if the given event is invalid.
+func (c *Client) Send(event *Event) {
+	if err := event.validate(); err != nil {
+		log.Panic(err)
+	}
+	select {
+	case c.pool <- event:
+		// ok
+	default:
+		// Data loss.
+	}
 }
 
 // conn keeps alive a connection to the server.
@@ -155,41 +190,6 @@ func (c *Client) readLoop(r io.Reader) {
 	// bad data is detected eagerly in (*Client).Send, which helps
 	// identify faulty call sites.
 	io.Copy(ioutil.Discard, r)
-}
-
-// Send tries to delivier the given event. Delivery is not guaranteed.
-// Send will panic if the given event is invalid.
-func (c *Client) Send(event *Event) {
-	if err := event.validate(); err != nil {
-		log.Panic(err)
-	}
-	select {
-	case c.pool <- event:
-		// ok
-	default:
-		// Data loss.
-	}
-}
-
-func (e *Event) validate() error {
-	if e.Host == "" {
-		hostname, err := os.Hostname()
-		if err != nil {
-			return err
-		}
-		e.Host = hostname
-	}
-	if e.Time == 0 {
-		now := time.Now().Unix()
-		e.Time = now
-	}
-	if e.Service == "" {
-		return errors.New("undefined service")
-	}
-	if e.IsFloat && e.Int != 0 {
-		return errors.New("float event with non-float value")
-	}
-	return nil
 }
 
 // frame represents a Riemann frame.
