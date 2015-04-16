@@ -32,7 +32,7 @@ const (
 )
 
 // errClosed is used internally to signal connection close.
-var errClosed = errors.New("cclient closed")
+var errClosed = errors.New("client closed")
 
 // Event represents a Riemann event.
 type Event struct {
